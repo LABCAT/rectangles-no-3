@@ -56,28 +56,28 @@ const P5SketchWithAudio = () => {
         ];
 
         p.preload = () => {
-            //  Midi.fromUrl(midi).then(
-            //     function(result) {
-            //         console.log(result.tracks);
-            //         const noteSet1 = result.tracks[3].notes; // Sampler 1 - Heavy guitar
-            //         p.player = new Tone.Player(audio, () => { p.audioLoaded = true; }).toMaster();
-            //         p.player.sync().start(0);
-            //         let lastTicks = -1;
-            //         for (let i = 0; i < noteSet1.length; i++) {
-            //             const note = noteSet1[i],
-            //                 { ticks, time } = note;
-            //             if(ticks !== lastTicks){
-            //                 Tone.Transport.schedule(
-            //                     () => {
-            //                         p.executeCueSet1(note);
-            //                     }, 
-            //                     time
-            //                 );
-            //                 lastTicks = ticks;
-            //             }
-            //         } 
-            //     }
-            // );
+             Midi.fromUrl(midi).then(
+                function(result) {
+                    console.log(result.tracks);
+                    const noteSet1 = result.tracks[3].notes; // Sampler 1 - Heavy guitar
+                    p.player = new Tone.Player(audio, () => { p.audioLoaded = true; }).toMaster();
+                    p.player.sync().start(0);
+                    let lastTicks = -1;
+                    for (let i = 0; i < noteSet1.length; i++) {
+                        const note = noteSet1[i],
+                            { ticks, time } = note;
+                        if(ticks !== lastTicks){
+                            Tone.Transport.schedule(
+                                () => {
+                                    p.executeCueSet1(note);
+                                }, 
+                                time
+                            );
+                            lastTicks = ticks;
+                        }
+                    } 
+                }
+            );
         }
 
         p.multipliers = [];
@@ -101,46 +101,83 @@ const P5SketchWithAudio = () => {
                 p.multipliers.push(i);
             }
             for (let i = 1; i <= 16; i++) {
-                for (let j = 0; j < 16; j++) {
-                    const pos = i + '-' + j; 
-                    p.rectangleGrid[pos] = false;
+                for (let j = 1; j <= 16; j++) {
+                    p.rectangleGrid.push(
+                        {
+                            x: i,
+                            y: j, 
+                            empty: true
+                        }
+                    );
                 }
             }
         };
 
-        p.allowOverlaps = false;
-
         p.draw = () => {
-            let spaceAvailable = Object.values(p.rectangleGrid).some((value) => value === false);
+            // let spaceAvailable = p.rectangleGrid.some((obj) => obj.empty);
+            // while(spaceAvailable) {
+            //     const colour = p.random(p.colours), 
+            //         cell = p.random(p.rectangleGrid.filter((obj) => obj.empty)),
+            //         { x, y } = cell;
+            //     let widthMultiplier = x < 16 ? p.random(p.multipliers) : 1,
+            //         heightMultiplier = y < 16 ? p.random(p.multipliers) : 1;
+            //     widthMultiplier = x + widthMultiplier > 16 ? 17 - x : widthMultiplier;
+            //     heightMultiplier = y + heightMultiplier > 16 ? 17 - y : heightMultiplier;
+            //     p.fill(colour.r, colour.g, colour.b);
+            //     p.rect(p.cellWidth * x - p.cellWidth, p.cellHeight * y - p.cellHeight, p.cellWidth * widthMultiplier, p.cellHeight * heightMultiplier);
+            //     for (let i = x; i < (x + widthMultiplier); i++) {
+            //         for (let j = y; j < (y + heightMultiplier); j++) {
+            //             const index = p.rectangleGrid.findIndex((obj) => obj.x === i && obj.y === j); 
+            //             p.rectangleGrid[index].empty = false;
+                        
+            //         }
+            //     }
+            //     spaceAvailable = p.rectangleGrid.some((obj) => obj.empty);
+            // }
+            
+        };
+
+        p.executeCueSet1 = (note) => {
+            p.createComposition();
+            for (let i = 0; i < p.rectangles.length; i++) {
+                const colour = p.random(p.colours),
+                    rectangle = p.rectangles[i],
+                    { x, y, widthMultiplier, heightMultiplier } = rectangle;
+                p.fill(colour.r, colour.g, colour.b);
+                p.rect(p.cellWidth * x - p.cellWidth, p.cellHeight * y - p.cellHeight, p.cellWidth * widthMultiplier, p.cellHeight * heightMultiplier);
+            }
+        };
+
+        p.rectangles = [];
+
+        p.createComposition = () => {
+            p.rectangles = [];
+            p.rectangleGrid = p.rectangleGrid.map(obj => ({...obj, empty: true}));
+            let spaceAvailable = p.rectangleGrid.some((obj) => obj.empty);
             while(spaceAvailable) {
-                const colour = p.random(p.colours), 
-                    gridSpaces = p.allowOverlaps ? p.rectangleGrid : Object.values(p.rectangleGrid).filter((item) =>  item == false),
-                    pos = p.random(Object.keys(p.rectangleGrid)).split('-'),
-                    x = parseInt(pos[0]),
-                    y = parseInt(pos[1]);
-                console.log(gridSpaces);
+                const cell = p.random(p.rectangleGrid.filter((obj) => obj.empty)),
+                    { x, y } = cell;
                 let widthMultiplier = x < 16 ? p.random(p.multipliers) : 1,
                     heightMultiplier = y < 16 ? p.random(p.multipliers) : 1;
                 widthMultiplier = x + widthMultiplier > 16 ? 17 - x : widthMultiplier;
                 heightMultiplier = y + heightMultiplier > 16 ? 17 - y : heightMultiplier;
-                p.fill(colour.r, colour.g, colour.b);
-                p.rect(p.cellWidth * x - p.cellWidth, p.cellHeight * y - p.cellHeight, p.cellWidth * widthMultiplier, p.cellHeight * heightMultiplier);
+                p.rectangles.push(
+                    {
+                        x: x,
+                        y: y,
+                        widthMultiplier: widthMultiplier,
+                        heightMultiplier: heightMultiplier,
+                    } 
+                )
                 for (let i = x; i < (x + widthMultiplier); i++) {
                     for (let j = y; j < (y + heightMultiplier); j++) {
-                        const pos = i + '-' + j; 
-                        p.rectangleGrid[pos] = true;
+                        const index = p.rectangleGrid.findIndex((obj) => obj.x === i && obj.y === j); 
+                        p.rectangleGrid[index].empty = false;
                         
                     }
                 }
-                spaceAvailable = Object.values(p.rectangleGrid).some((value) => value === false);
+                spaceAvailable = p.rectangleGrid.some((obj) => obj.empty);
             }
-        };
-
-        p.executeCueSet1 = (note) => {
-            // p.background(p.random(255), p.random(255), p.random(255));
-            // p.fill(p.random(255), p.random(255), p.random(255));
-            // p.noStroke();
-            // p.ellipse(p.width / 2, p.height / 2, p.width / 4, p.width / 4);
         };
 
         p.mousePressed = () => {
