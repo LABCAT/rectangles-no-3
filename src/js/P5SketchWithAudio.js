@@ -58,8 +58,9 @@ const P5SketchWithAudio = () => {
         p.preload = () => {
              Midi.fromUrl(midi).then(
                 function(result) {
-                    console.log(result.tracks);
-                    const noteSet1 = result.tracks[3].notes; // Sampler 1 - Heavy guitar
+                    console.log(result);
+                    //const noteSet1 = result.tracks[3].notes; // Sampler 1 - Heavy guitar
+                    const noteSet1 = result.tracks[5].notes; // Sampler 3 - Clavinet D6
                     p.player = new Tone.Player(audio, () => { p.audioLoaded = true; }).toMaster();
                     p.player.sync().start(0);
                     let lastTicks = -1;
@@ -67,6 +68,7 @@ const P5SketchWithAudio = () => {
                         const note = noteSet1[i],
                             { ticks, time } = note;
                         if(ticks !== lastTicks){
+                            // console.log(time);
                             Tone.Transport.schedule(
                                 () => {
                                     p.executeCueSet1(note);
@@ -114,38 +116,38 @@ const P5SketchWithAudio = () => {
         };
 
         p.draw = () => {
-            // let spaceAvailable = p.rectangleGrid.some((obj) => obj.empty);
-            // while(spaceAvailable) {
-            //     const colour = p.random(p.colours), 
-            //         cell = p.random(p.rectangleGrid.filter((obj) => obj.empty)),
-            //         { x, y } = cell;
-            //     let widthMultiplier = x < 16 ? p.random(p.multipliers) : 1,
-            //         heightMultiplier = y < 16 ? p.random(p.multipliers) : 1;
-            //     widthMultiplier = x + widthMultiplier > 16 ? 17 - x : widthMultiplier;
-            //     heightMultiplier = y + heightMultiplier > 16 ? 17 - y : heightMultiplier;
-            //     p.fill(colour.r, colour.g, colour.b);
-            //     p.rect(p.cellWidth * x - p.cellWidth, p.cellHeight * y - p.cellHeight, p.cellWidth * widthMultiplier, p.cellHeight * heightMultiplier);
-            //     for (let i = x; i < (x + widthMultiplier); i++) {
-            //         for (let j = y; j < (y + heightMultiplier); j++) {
-            //             const index = p.rectangleGrid.findIndex((obj) => obj.x === i && obj.y === j); 
-            //             p.rectangleGrid[index].empty = false;
-                        
-            //         }
-            //     }
-            //     spaceAvailable = p.rectangleGrid.some((obj) => obj.empty);
-            // }
             
         };
 
+        p.currentPointer = 0;
+
+        p.rectanglesPerCue = 0;
+
+        p.currentCue1 = 1;
+
         p.executeCueSet1 = (note) => {
-            p.createComposition();
-            for (let i = 0; i < p.rectangles.length; i++) {
-                const colour = p.random(p.colours),
-                    rectangle = p.rectangles[i],
-                    { x, y, widthMultiplier, heightMultiplier } = rectangle;
-                p.fill(colour.r, colour.g, colour.b);
-                p.rect(p.cellWidth * x - p.cellWidth, p.cellHeight * y - p.cellHeight, p.cellWidth * widthMultiplier, p.cellHeight * heightMultiplier);
+            const modulo = p.currentCue1 % 33;
+            if(modulo === 1){
+                p.background(255);
+                p.createComposition();
+                p.currentPointer = 0;
+                p.rectanglesPerCue = Math.floor(p.rectangles.length / 33);
             }
+            
+            
+            if(p.currentPointer < p.rectangles.length){
+                const limit = (p.rectanglesPerCue * modulo) <= p.rectangles.length ? p.rectanglesPerCue * modulo : p.rectangles.length;
+                console.log(limit);
+                for (let i = p.currentPointer; i < limit; i++) {
+                    const colour = p.random(p.colours),
+                        rectangle = p.rectangles[i],
+                        { x, y, widthMultiplier, heightMultiplier } = rectangle;
+                    p.fill(colour.r, colour.g, colour.b);
+                    p.rect(p.cellWidth * x - p.cellWidth, p.cellHeight * y - p.cellHeight, p.cellWidth * widthMultiplier, p.cellHeight * heightMultiplier);
+                }
+                p.currentPointer = p.rectanglesPerCue * modulo;
+            }
+            p.currentCue1++;
         };
 
         p.rectangles = [];
