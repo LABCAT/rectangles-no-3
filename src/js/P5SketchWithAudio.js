@@ -33,11 +33,6 @@ const P5SketchWithAudio = () => {
             g: 255,
             b: 255,
           },
-        //   {
-        //     r: 123,
-        //     g: 123,
-        //     b: 123,
-        //   },
           {
             r: 221,
             g: 1,
@@ -58,29 +53,35 @@ const P5SketchWithAudio = () => {
         p.preload = () => {
              Midi.fromUrl(midi).then(
                 function(result) {
-                    console.log(result);
-                    //const noteSet1 = result.tracks[3].notes; // Sampler 1 - Heavy guitar
-                    const noteSet1 = result.tracks[5].notes; // Sampler 3 - Clavinet D6
+                    console.log(result.tracks);
+                    const noteSet1 = result.tracks[3].notes; // Sampler 1 - Heavy guitar
+                    const noteSet2 = result.tracks[5].notes; // Sampler 3 - Clavinet D6
+                    const noteSet3= result.tracks[8].notes.filter((note) => note.midi !== 43); // Redrum 1 - Abstract Kit 01
                     p.player = new Tone.Player(audio, () => { p.audioLoaded = true; }).toMaster();
                     p.player.sync().start(0);
-                    let lastTicks = -1;
-                    for (let i = 0; i < noteSet1.length; i++) {
-                        const note = noteSet1[i],
-                            { ticks, time } = note;
-                        if(ticks !== lastTicks){
-                            // console.log(time);
-                            Tone.Transport.schedule(
-                                () => {
-                                    p.executeCueSet1(note);
-                                }, 
-                                time
-                            );
-                            lastTicks = ticks;
-                        }
-                    } 
+                    p.scheduleCueSet(noteSet1, 'executeCueSet1');
+                    p.scheduleCueSet(noteSet2, 'executeCueSet2'); 
+                    p.scheduleCueSet(noteSet3, 'executeCueSet3'); 
                 }
             );
         }
+
+        p.scheduleCueSet = (noteSet, callbackName)  => {
+            let lastTicks = -1;
+            for (let i = 0; i < noteSet.length; i++) {
+                const note = noteSet[i],
+                    { ticks, time } = note;
+                if(ticks !== lastTicks){
+                    Tone.Transport.schedule(
+                        () => {
+                            p.[callbackName](note);
+                        }, 
+                        time
+                    );
+                    lastTicks = ticks;
+                }
+            }
+        } 
 
         p.multipliers = [];
         
@@ -119,6 +120,14 @@ const P5SketchWithAudio = () => {
             
         };
 
+        p.drawRect = (rectangle) => {
+            const { x, y, widthMultiplier, heightMultiplier, colourIndex } = rectangle,
+                colour = p.colours[colourIndex];
+            p.fill(colour.r, colour.g, colour.b);
+            p.rect(p.cellWidth * x - p.cellWidth, p.cellHeight * y - p.cellHeight, p.cellWidth * widthMultiplier, p.cellHeight * heightMultiplier);
+        
+        };
+
         p.currentPointer = 0;
 
         p.rectanglesPerCue = 0;
@@ -126,28 +135,83 @@ const P5SketchWithAudio = () => {
         p.currentCue1 = 1;
 
         p.executeCueSet1 = (note) => {
-            const modulo = p.currentCue1 % 33;
-            if(modulo === 1){
-                p.background(255);
+            if(p.currentCue1 < 11){
+                p.clear();
                 p.createComposition();
-                p.currentPointer = 0;
-                p.rectanglesPerCue = Math.floor(p.rectangles.length / 33);
-            }
-            
-            
-            if(p.currentPointer < p.rectangles.length){
-                const limit = (p.rectanglesPerCue * modulo) <= p.rectangles.length ? p.rectanglesPerCue * modulo : p.rectangles.length;
-                console.log(limit);
-                for (let i = p.currentPointer; i < limit; i++) {
-                    const colour = p.random(p.colours),
-                        rectangle = p.rectangles[i],
-                        { x, y, widthMultiplier, heightMultiplier } = rectangle;
-                    p.fill(colour.r, colour.g, colour.b);
-                    p.rect(p.cellWidth * x - p.cellWidth, p.cellHeight * y - p.cellHeight, p.cellWidth * widthMultiplier, p.cellHeight * heightMultiplier);
+                for (let i = 0; i < p.rectangles.length; i++) {
+                    p.drawRect( p.rectangles[i]);
                 }
-                p.currentPointer = p.rectanglesPerCue * modulo;
+            }
+
+            if(p.currentCue1 > 20){
+                p.colours = [
+                    {
+                        r: 0,
+                        g: 0,
+                        b: 0,
+                    },
+                    {
+                        r: 255,
+                        g: 255,
+                        b: 255,
+                    },
+                    {
+                        r: p.random(255),
+                        g: p.random(255),
+                        b: p.random(255),
+                    },
+                    {
+                        r: p.random(255),
+                        g: p.random(255),
+                        b: p.random(255),
+                    },
+                    {
+                        r: p.random(255),
+                        g: p.random(255),
+                        b: p.random(255),
+                    },
+                ];
             }
             p.currentCue1++;
+        };
+
+        p.currentCue2 = 1;
+
+        p.rectanglesToDraw = [];
+
+        p.executeCueSet2 = (note) => {
+            if(p.currentCue2 > 33){
+                const modulo = p.currentCue2 % 33;
+                if(modulo === 1){
+                    p.createComposition();
+                    p.rectanglesToDraw = [];
+                    p.currentPointer = 0;
+                    p.rectanglesPerCue = Math.floor(p.rectangles.length / 33);
+                }
+                
+                if(p.currentPointer < p.rectangles.length){
+                    const limit = (p.rectanglesPerCue * modulo) <= p.rectangles.length ? p.rectanglesPerCue * modulo : p.rectangles.length;
+                    for (let i = p.currentPointer; i < limit; i++) {
+                        p.rectanglesToDraw.push( p.rectangles[i]);
+                    }
+                    p.currentPointer = p.rectanglesPerCue * modulo;
+                }
+
+                p.clear();
+                for (let i = 0; i < p.rectanglesToDraw.length; i++) {
+                    p.drawRect( p.rectanglesToDraw[i]);
+                }
+            }
+            p.currentCue2++;
+        };
+
+        p.currentCue3 = 1;
+
+        p.executeCueSet3 = (note) => {
+            if(p.currentCue3 > 10){
+                
+            }
+            p.currentCue3++;
         };
 
         p.rectangles = [];
@@ -169,6 +233,7 @@ const P5SketchWithAudio = () => {
                         y: y,
                         widthMultiplier: widthMultiplier,
                         heightMultiplier: heightMultiplier,
+                        colourIndex: parseInt(p.random(0, 5))
                     } 
                 )
                 for (let i = x; i < (x + widthMultiplier); i++) {
