@@ -56,7 +56,8 @@ const P5SketchWithAudio = () => {
                     console.log(result.tracks);
                     const noteSet1 = result.tracks[3].notes; // Sampler 1 - Heavy guitar
                     const noteSet2 = result.tracks[5].notes; // Sampler 3 - Clavinet D6
-                    const noteSet3= result.tracks[8].notes.filter((note) => note.midi !== 43); // Redrum 1 - Abstract Kit 01
+                    const noteSet3 = result.tracks[0].notes; // Synth 1 - Filter Wheeler
+                    const noteSet4= result.tracks[8].notes.filter((note) => note.midi !== 43); // Redrum 1 - Abstract Kit 01
                     p.player = new Tone.Player(audio, () => { p.audioLoaded = true; }).toMaster();
                     p.player.sync().start(0);
                     p.scheduleCueSet(noteSet1, 'executeCueSet1');
@@ -93,6 +94,7 @@ const P5SketchWithAudio = () => {
 
         p.setup = () => {
             p.canvas = p.createCanvas(p.canvasWidth, p.canvasHeight);
+            p.frameRate(30);
             p.background(255);
             p.stroke(0);
             p.strokeWeight(4);
@@ -135,7 +137,7 @@ const P5SketchWithAudio = () => {
         p.currentCue1 = 1;
 
         p.executeCueSet1 = (note) => {
-            if(p.currentCue1 < 11){
+            if(p.currentCue1 <= 10){
                 p.clear();
                 p.createComposition();
                 for (let i = 0; i < p.rectangles.length; i++) {
@@ -180,7 +182,7 @@ const P5SketchWithAudio = () => {
         p.rectanglesToDraw = [];
 
         p.executeCueSet2 = (note) => {
-            if(p.currentCue2 > 33){
+            if(p.currentCue2 > 33 && p.currentCue2 <= (165 - 8)){
                 const modulo = p.currentCue2 % 33;
                 if(modulo === 1){
                     p.createComposition();
@@ -209,7 +211,11 @@ const P5SketchWithAudio = () => {
 
         p.executeCueSet3 = (note) => {
             if(p.currentCue3 > 10){
-                
+                p.clear();
+                p.createComposition();
+                for (let i = 0; i < p.rectangles.length; i++) {
+                    p.drawRect( p.rectangles[i]);
+                }
             }
             p.currentCue3++;
         };
