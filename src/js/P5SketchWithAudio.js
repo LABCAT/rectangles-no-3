@@ -92,6 +92,10 @@ const P5SketchWithAudio = () => {
 
         p.cellHeight = 0;
 
+        p.compositions = [];
+
+        p.currentComposition = 0;
+
         p.setup = () => {
             p.canvas = p.createCanvas(p.canvasWidth, p.canvasHeight);
             p.frameRate(30);
@@ -116,6 +120,11 @@ const P5SketchWithAudio = () => {
                     );
                 }
             }
+
+            for (let i = 0; i < 60; i++) {
+                p.createComposition();
+                p.compositions.push(p.rectangles);
+            }
         };
 
         p.draw = () => {
@@ -139,7 +148,8 @@ const P5SketchWithAudio = () => {
         p.executeCueSet1 = (note) => {
             if(p.currentCue1 <= 10){
                 p.clear();
-                p.createComposition();
+                p.rectangles = p.compositions[p.currentComposition];
+                p.currentComposition++;
                 for (let i = 0; i < p.rectangles.length; i++) {
                     p.drawRect( p.rectangles[i]);
                 }
@@ -182,10 +192,11 @@ const P5SketchWithAudio = () => {
         p.rectanglesToDraw = [];
 
         p.executeCueSet2 = (note) => {
-            if(p.currentCue2 > 33 && p.currentCue2 <= (165 - 8)){
+            if(p.currentCue2 > 33 && p.currentCue2 <= (165 - 6)){
                 const modulo = p.currentCue2 % 33;
                 if(modulo === 1){
-                    p.createComposition();
+                    p.rectangles = p.compositions[p.currentComposition];
+                    p.currentComposition++;
                     p.rectanglesToDraw = [];
                     p.currentPointer = 0;
                     p.rectanglesPerCue = Math.floor(p.rectangles.length / 33);
@@ -210,9 +221,10 @@ const P5SketchWithAudio = () => {
         p.currentCue3 = 1;
 
         p.executeCueSet3 = (note) => {
-            if(p.currentCue3 > 10){
+            if(p.currentCue3 > 6){
                 p.clear();
-                p.createComposition();
+                p.rectangles = p.compositions[p.currentComposition];
+                p.currentComposition++;
                 for (let i = 0; i < p.rectangles.length; i++) {
                     p.drawRect( p.rectangles[i]);
                 }
@@ -221,6 +233,7 @@ const P5SketchWithAudio = () => {
         };
 
         p.rectangles = [];
+
 
         p.createComposition = () => {
             p.rectangles = [];
